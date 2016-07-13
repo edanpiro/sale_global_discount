@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 
 from openerp import models, fields, api, _
-from samba.dcerpc.dns import res_rec
 from openerp.tools import float_is_zero, float_compare
 
 
