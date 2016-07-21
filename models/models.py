@@ -95,20 +95,40 @@ class invoice_global_discount(models.Model):
 
         self.amount_discount = amount_discount
 
+    @api.multi
+    def button_reset_taxes(self):
+        account_invoice_tax = self.env['account.invoice.tax']
+        ctx = dict(self._context)
+        for invoice in self:
+            self._cr.execute("DELETE FROM account_invoice_tax WHERE invoice_id=%s AND manual is False", (invoice.id,))
+            self.invalidate_cache()
+            partner = invoice.partner_id
+            if partner.lang:
+                ctx['lang'] = partner.lang
+            for taxe in account_invoice_tax.compute(invoice.with_context(ctx)).values():
+                taxe.update({
+                    'amount': invoice.total_taxed * 0.18
+                })
+                account_invoice_tax.create(taxe)
+        # dummy write on self to trigger recomputations
+        return self.with_context(ctx).write({'invoice_line': []})
+
 
     @api.one
     @api.depends('invoice_line.price_subtotal', 'tax_line.amount', 'currency_id', 'company_id')
     def _compute_amount(self):
 
-        self.amount_untaxed = sum(line.price_subtotal for line in self.invoice_line)
-        self.amount_tax = sum(line.amount for line in self.tax_line)
+        amount_untaxed = sum(line.price_subtotal for line in self.invoice_line)
+        # self.amount_tax = sum(line.amount for line in self.tax_line)
         amount_discount = amount_total = 0.0
         if self.discount_type == 'percent':
-            amount_discount = self.amount_untaxed * self.discount_rate / 100
+            amount_discount = amount_untaxed * self.discount_rate / 100
         else:
             amount_discount = self.discount_rate
 
-        amount_total = self.amount_untaxed - amount_discount + self.amount_tax
+        self.amount_untaxed = self.total_taxed + self.total_inafecto + self.total_exonerated
+        self.amount_tax = self.total_taxed * 0.18
+        amount_total = self.amount_untaxed  + self.amount_tax
         self.amount_total = amount_total
 
         amount_total_company_signed = amount_total
