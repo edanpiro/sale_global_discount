@@ -23,15 +23,15 @@
         <field name="model">account.invoice</field>
         <field name="inherit_id" ref="account.invoice_form"/>
         <field name="arch" type="xml">
-                <xpath expr="//field[@name='invoice_line']" position="after">
-                        <group name="discount" col="2" colspan="2">
-                            <field name="discount_type" onchange="compute_discount"/>
-                            <field name="discount_rate" onchange="compute_discount"/>
-                        </group>
-                </xpath>
-                <xpath expr="//field[@name='amount_tax']" position="before">
-                            <field name="amount_discount" widget='monetary' options="{'currency_field': 'currency_id'}"/>
-                </xpath>
+            <xpath expr="//field[@name='invoice_line']" position="after">
+                <group name="discount" col="2" colspan="2">
+                    <field name="discount_type" onchange="compute_discount"/>
+                    <field name="discount_rate" onchange="compute_discount"/>
+                </group>
+            </xpath>
+            <xpath expr="//field[@name='residual']" position="before">
+                <field name="amount_discount" widget='monetary' options="{'currency_field': 'currency_id'}"/>
+            </xpath>
         </field>
     </record>
 
